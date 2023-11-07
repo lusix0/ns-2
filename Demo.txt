@@ -1,0 +1,199 @@
+3a
+
+import java.io.*;
+import java.net.*;
+
+public class Server {
+    public static void main(String[] args) {
+        try (ServerSocket serverSocket = new ServerSocket(8090)) {
+            System.out.println("Server is running. Waiting for a client to connect...");
+            Socket clientSocket = serverSocket.accept();
+            System.out.println("Client connected from " + clientSocket.getInetAddress() + ":" + clientSocket.getPort());
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+    }
+}
+
+import java.io.*;
+import java.net.*;
+
+public class Client {
+    public static void main(String[] args) {
+        try (Socket socket = new Socket("localhost", 8090)) {
+            System.out.println("Connected to the server.");
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+    }
+}
+
+3b
+import java.io.*;
+import java.net.*;
+
+public class Client {
+    public static void main(String[] args) {
+        try (Socket socket = new Socket("localhost", 8090);
+             BufferedReader reader = new BufferedReader(new InputStreamReader(socket.getInputStream()));
+             PrintWriter writer = new PrintWriter(socket.getOutputStream(), true);
+             BufferedReader consoleReader = new BufferedReader(new InputStreamReader(System.in)) ) {
+
+            System.out.println("Connected to server.");
+
+            String inputLine, outputLine;
+            while ((inputLine = consoleReader.readLine()) != null) {
+                writer.println(inputLine);
+
+                if (inputLine.equalsIgnoreCase("bye")) {
+                    break;
+                }
+
+                outputLine = reader.readLine();
+                System.out.println("Server: " + outputLine);
+            }
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+    }
+}
+
+import java.io.*;
+import java.net.*;
+
+public class Server {
+    public static void main(String[] args) {
+        try (ServerSocket serverSocket = new ServerSocket(8090);
+             Socket clientSocket = serverSocket.accept();
+             BufferedReader reader = new BufferedReader(new InputStreamReader(clientSocket.getInputStream()));
+             PrintWriter writer = new PrintWriter(clientSocket.getOutputStream(), true)) {
+
+            System.out.println("Server is running. Waiting for a client to connect...");
+
+            String inputLine, outputLine;
+            while ((inputLine = reader.readLine()) != null) {
+                System.out.println("Client: " + inputLine);
+
+                if (inputLine.equalsIgnoreCase("bye")) {
+                    break;
+                }
+
+                // Process input and generate a response
+                outputLine = "Server response: " + inputLine;
+                writer.println(outputLine);
+            }
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+    }
+}
+
+4
+import java.io.*;
+import java.net.*;
+import java.util.Scanner;
+
+public class DNSClient {
+    public static void main(String[] args) {
+        try (DatagramSocket socket = new DatagramSocket()) {
+            InetAddress serverAddress = InetAddress.getByName("localhost");
+            int serverPort = 9816;
+            Scanner scanner = new Scanner(System.in);
+            
+            System.out.print("Enter domain names (separated by commas): ");
+            String[] domainNames = scanner.nextLine().split(",");
+
+            for (String domainName : domainNames) {
+                byte[] sendData = domainName.trim().getBytes();
+                socket.send(new DatagramPacket(sendData, sendData.length, serverAddress, serverPort));
+
+                byte[] receiveData = new byte[1024];
+                DatagramPacket receivePacket = new DatagramPacket(receiveData, receiveData.length);
+                socket.receive(receivePacket);
+                String dnsResponse = new String(receivePacket.getData()).trim();
+                System.out.println("DNS response for " + domainName + ": " + dnsResponse);
+            }
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+    }
+}
+
+import java.net.*;
+
+public class DNSServer {
+    public static void main(String[] args) {
+        try (DatagramSocket socket = new DatagramSocket(9816)) {
+            byte[] buffer = new byte[1024];
+
+            while (true) {
+                DatagramPacket requestPacket = new DatagramPacket(buffer, buffer.length);
+                socket.receive(requestPacket;
+
+                String domainName = new String(requestPacket.getData(), 0, requestPacket.getLength());
+                String ipAddress = resolveDomain(domainName);
+
+                DatagramPacket responsePacket = new DatagramPacket(ipAddress.getBytes(), ipAddress.length(),
+                        requestPacket.getAddress(), requestPacket.getPort());
+                socket.send(responsePacket);
+            }
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+    }
+
+    // Simulate DNS resolution (replace with your own DNS logic)
+    private static String resolveDomain(String domainName) {
+        // Replace with your DNS resolution logic
+        if (domainName.equals("example.com")) {
+            return "192.168.1.1";
+        } else {
+            return "DNS record not found";
+        }
+    }
+}
+
+10
+import java.util.zip.CRC32;
+import java.util.Scanner;
+
+public class CRCTransmissionDemo {
+    public static void main(String[] args) {
+        // Get the original message in binary from the user
+        Scanner scanner = new Scanner(System.in);
+        System.out.print("Enter the original message in binary (0's and 1's): ");
+        String originalMessage = scanner.nextLine();
+        
+        // Get the received message in binary from the user
+        System.out.print("Enter the received message in binary (0's and 1's): ");
+        String receivedMessage = scanner.nextLine();
+        scanner.close();
+
+        // Calculate CRC codes
+        long originalCRC = calculateCRC(originalMessage);
+        long receivedCRC = calculateCRC(receivedMessage);
+
+        // Check for errors
+        boolean isDataValid = originalCRC == receivedCRC;
+
+        System.out.println("Original Message: " + originalMessage);
+        System.out.println("Received Message: " + receivedMessage);
+        System.out.println("CRC Code for Original Message: " + originalCRC);
+        System.out.println("CRC Code for Received Message: " + receivedCRC);
+
+        if (isDataValid) {
+            System.out.println("Data is error-free.");
+        } else {
+            System.out.println("Error detected in the received message.");
+        }
+    }
+
+    public static long calculateCRC(String message) {
+        CRC32 crc = new CRC32();
+        byte[] bytes = message.getBytes();
+        crc.update(bytes);
+        return crc.getValue();
+    }
+}
+
+
